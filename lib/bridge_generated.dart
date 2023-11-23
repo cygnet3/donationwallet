@@ -277,6 +277,25 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<(String, String)> getKeysFromSeed(
+      {required String seedphrase, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(seedphrase);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_keys_from_seed(port_, arg0),
+      parseSuccessData: _wire2api___record__String_String,
+      parseErrorData: null,
+      constMeta: kGetKeysFromSeedConstMeta,
+      argValues: [seedphrase],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetKeysFromSeedConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_keys_from_seed",
+        argNames: ["seedphrase"],
+      );
+
   void dispose() {
     _platform.dispose();
   }
@@ -284,6 +303,17 @@ class RustImpl implements Rust {
 
   String _wire2api_String(dynamic raw) {
     return raw as String;
+  }
+
+  (String, String) _wire2api___record__String_String(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2) {
+      throw Exception('Expected 2 elements, got ${arr.length}');
+    }
+    return (
+      _wire2api_String(arr[0]),
+      _wire2api_String(arr[1]),
+    );
   }
 
   LogEntry _wire2api_log_entry(dynamic raw) {
@@ -688,6 +718,23 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_receiving_address');
   late final _wire_get_receiving_address =
       _wire_get_receiving_addressPtr.asFunction<void Function(int)>();
+
+  void wire_get_keys_from_seed(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> seedphrase,
+  ) {
+    return _wire_get_keys_from_seed(
+      port_,
+      seedphrase,
+    );
+  }
+
+  late final _wire_get_keys_from_seedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_keys_from_seed');
+  late final _wire_get_keys_from_seed = _wire_get_keys_from_seedPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,

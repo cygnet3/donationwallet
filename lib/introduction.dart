@@ -1,6 +1,7 @@
-import 'package:donationwallet/customwallet.dart';
+import 'package:donationwallet/walletfromkeys.dart';
 import 'package:donationwallet/home.dart';
 import 'package:donationwallet/storage.dart';
+import 'package:donationwallet/walletfromseed.dart';
 import 'package:flutter/material.dart';
 
 class IntroductionPage extends StatelessWidget {
@@ -52,9 +53,30 @@ class IntroductionPage extends StatelessWidget {
                   ),
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const CustomWalletPage()));
+                        builder: (context) => const WalletFromKeysPage()));
                   },
-                  child: const Text('Use custom settings'),
+                  child: const Text('Import from keys'),
+                ),
+              ),
+            ),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 120.0,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    textStyle: Theme.of(context).textTheme.headlineLarge,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const WalletFromSeedPage()));
+                  },
+                  child: const Text('Import from seed'),
                 ),
               ),
             ),

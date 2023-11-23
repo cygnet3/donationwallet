@@ -2,17 +2,18 @@ import 'package:donationwallet/home.dart';
 import 'package:donationwallet/storage.dart';
 import 'package:flutter/material.dart';
 
-class CustomWalletPage extends StatefulWidget {
-  const CustomWalletPage({super.key});
+class WalletFromKeysPage extends StatefulWidget {
+  const WalletFromKeysPage({super.key});
 
   @override
-  State<CustomWalletPage> createState() => _CustomWalletPage();
+  State<WalletFromKeysPage> createState() => _WalletFromKeysPageState();
 }
 
-class _CustomWalletPage extends State<CustomWalletPage> {
+class _WalletFromKeysPageState extends State<WalletFromKeysPage> {
   final scanSkControler = TextEditingController();
   final spendPkController = TextEditingController();
   final birthdayController = TextEditingController();
+  final signet = true;
 
   @override
   void dispose() {
@@ -50,6 +51,23 @@ class _CustomWalletPage extends State<CustomWalletPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const SizedBox(
+                  width: 8.0,
+                ),
+                const Text('mainnet'),
+                Switch(
+                  onChanged: (bool value) {
+                    setState(() {
+                      // todo
+                    });
+                  },
+                  value: signet,
+                ),
+                const Text('signet'),
+              ],
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
               child: TextField(

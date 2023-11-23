@@ -70,6 +70,11 @@ abstract class Rust {
   Future<String> getReceivingAddress({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetReceivingAddressConstMeta;
+
+  Future<(String, String)> getKeysFromSeed(
+      {required String seedphrase, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetKeysFromSeedConstMeta;
 }
 
 class LogEntry {
