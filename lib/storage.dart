@@ -14,8 +14,15 @@ class SecureStorageService {
   }
 
   Future<void> initializeWithDefaultSettings() async {
-    return await initializeWithCustomSettings(dotenv.env['DEFAULT_SPEND_PK']!,
-        dotenv.env['DEFAULT_SCAN_SK']!, dotenv.env['DEFAULT_BIRTHDAY']!);
+    await _secureStorage.write(key: 'spend_sk_hex', value: "");
+    await _secureStorage.write(key: 'scan_sk_hex', value: "");
+    await _secureStorage.write(
+        key: 'mnemonic', value: dotenv.env['DEFAULT_MNEMONIC']!);
+    await _secureStorage.write(
+        key: 'birthday', value: dotenv.env['DEFAULT_BIRTHDAY']!);
+    await _secureStorage.write(key: 'network', value: 'signet');
+    await _secureStorage.write(key: 'is_readonly', value: 'true');
+    await _secureStorage.write(key: 'is_initialized', value: 'true');
   }
 
   Future<void> resetWallet() async {

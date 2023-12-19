@@ -94,16 +94,18 @@ class _WalletScreenState extends State<WalletScreen> {
     final Directory appDocumentsDir = await getApplicationSupportDirectory();
 
     SecureStorageService secureStorage = SecureStorageService();
-    final scanSk = (await secureStorage.read(key: 'scan_sk'))!;
-    final spendPk = (await secureStorage.read(key: 'spend_pk'))!;
+
+    final mnemonic = (await secureStorage.read(key: 'mnemonic'))!;
+    final wallettype = WalletType.mnemonic(mnemonic);
+    // final scanSkHex = (await secureStorage.read(key: 'scan_sk_hex'))!;
+    // final spendSkHex = (await secureStorage.read(key: 'spend_sk_hex'))!;
     final isTestnet = (await secureStorage.read(key: 'network'))! != 'mainnet';
     final birthday = int.parse((await secureStorage.read(key: 'birthday'))!);
 
     // this sets up everything except nakamoto
     await api.setup(
       filesDir: appDocumentsDir.path,
-      scanSk: scanSk,
-      spendPk: spendPk,
+      walletType: wallettype,
       isTestnet: isTestnet,
       birthday: birthday,
     );
