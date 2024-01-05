@@ -1,134 +1,65 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:donationwallet/ffi.dart';
-import 'package:donationwallet/storage.dart';
+import 'package:donationwallet/main.dart';
+import 'package:donationwallet/spend.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:barcode_widget/barcode_widget.dart';
 
-class WalletScreen extends StatefulWidget {
+class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
-  @override
-  State<WalletScreen> createState() => _WalletScreenState();
-}
-
-class _WalletScreenState extends State<WalletScreen> {
-  int balance = 0;
-  int tipheight = 0;
-  int scanheight = 0;
-  int peercount = 0;
-  Timer? _timer;
-
-  String spaddress = '';
-
-  bool scanning = false;
-  double progress = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _setup();
-    startTimer();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      _timer = Timer.periodic(const Duration(seconds: 5), (Timer t) async {
-        if (!scanning) {
-          final peercount = await api.getPeerCount();
-          final info = await api.getWalletInfo();
-
-          setState(() {
-            scanheight = info.scanHeight;
-            tipheight = info.blockTip;
-            balance = info.amount;
-            this.peercount = peercount;
-          });
-        }
-      });
-    });
-  }
-
-  Future<void> updateWalletInfo() async {
-    final info = await api.getWalletInfo();
-    setState(() {
-      scanheight = info.scanHeight;
-      tipheight = info.blockTip;
-    });
-  }
-
-  Future<void> _setup() async {
-    api.createLogStream().listen((event) {
-      print('RUST: ${event.msg}');
-    });
-
-    api.createScanProgressStream().listen(((event) {
-      int start = event.start;
-      int current = event.current;
-      int end = event.end;
-      double scanned = (current - start).toDouble();
-      double total = (end - start).toDouble();
-      double progress = scanned / total;
-      if (current == end) {
-        progress = 0.0;
-      }
-      setState(() {
-        this.progress = progress;
-        scanheight = current;
-      });
-    }));
-
-    api.createAmountStream().listen((event) {
-      setState(() {
-        balance = event;
-      });
-    });
-
-    final Directory appDocumentsDir = await getApplicationSupportDirectory();
-
-    SecureStorageService secureStorage = SecureStorageService();
-    final scanSk = (await secureStorage.read(key: 'scan_sk'))!;
-    final spendPk = (await secureStorage.read(key: 'spend_pk'))!;
-    final isTestnet = (await secureStorage.read(key: 'network'))! != 'mainnet';
-    final birthday = int.parse((await secureStorage.read(key: 'birthday'))!);
-
-    // this sets up everything except nakamoto
-    await api.setup(
-      filesDir: appDocumentsDir.path,
-      scanSk: scanSk,
-      spendPk: spendPk,
-      isTestnet: isTestnet,
-      birthday: birthday,
-    );
-
-    final amt = await api.getWalletBalance();
-    setState(() {
-      balance = amt;
-    });
-
-    // this starts nakamoto, will block forever (or until client is restarted)
-    api.startNakamoto();
-  }
-
   Future<void> _scanToTip() async {
-    scanning = true;
-    await updateWalletInfo();
-    await api.scanToTip();
-    scanning = false;
+    UnimplementedError();
   }
 
-  Widget showScanText() {
-    final toScan = tipheight - scanheight;
+  Future<void> _updateOwnedOutputs(
+      WalletState walletState, Function(Exception? e) callback) async {
+    try {
+      walletState.updateOwnedOutputs();
+      callback(null);
+    } on Exception catch (e) {
+      callback(e);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  void _showReceiveDialog(BuildContext context, String address) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Your address'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SingleChildScrollView(
+                child: BarcodeWidget(data: address, barcode: Barcode.qrCode()),
+              ),
+              SizedBox(height: 20),
+              SelectableText(address),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget showScanText(context) {
+    final walletState = Provider.of<WalletState>(context);
+    final toScan = walletState.tip - walletState.lastScan;
 
     String text;
-    if (scanheight == 0 || peercount == 0) {
+    if (walletState.peercount == 0) {
       text = 'Waiting for peers';
     } else if (toScan == 0) {
       text = 'Up to date!';
@@ -144,51 +75,100 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const SizedBox(
-            height: 10,
-          ),
-          Text('Nakamoto peer count: $peercount'),
-          const SizedBox(
-            height: 80,
-          ),
-          Text(
-            'Balance: $balance',
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          const Spacer(),
-          SizedBox(
+    final walletState = Provider.of<WalletState>(context);
+
+    Widget progressWidget = walletState.progress != 0.0
+        ? SizedBox(
             width: 100,
             height: 100,
-            child: Visibility(
-              visible: progress != 0.0,
-              child: CircularProgressIndicator(
-                value: progress,
-                strokeWidth: 6.0,
-              ),
+            child: CircularProgressIndicator(
+              value: walletState.progress,
+              strokeWidth: 6.0,
             ),
-          ),
-          const SizedBox(
-            height: 20.0,
-          ),
-          showScanText(),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: peercount == 0 || tipheight < scanheight
-                ? null
-                : () async {
-                    await _scanToTip();
-                  },
+          )
+        : ElevatedButton(
             style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
+              textStyle: Theme.of(context).textTheme.headlineLarge,
+              shape: CircleBorder(),
+              padding: EdgeInsets.all(60.0),
             ),
-            child: const Text('Scan for payments'),
+            onPressed: () async {
+              await _scanToTip();
+            },
+            child: const Text('Scan'));
+
+    if (!walletState.walletLoaded) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Nakamoto peer count: ${walletState.peercount}'),
+                Text('birthday: ${walletState.birthday}'),
+                // Spacer(),
+                Text(
+                  'Balance: ${walletState.amount}',
+                  style: Theme.of(context).textTheme.displayMedium,
+                ),
+                Spacer(),
+                progressWidget,
+                Spacer(),
+                showScanText(context),
+                Spacer(),
+                buildBottomButtons(context),
+                Spacer(),
+              ],
+            ),
           ),
-          const SizedBox(
-            height: 20,
+        ),
+      ],
+    );
+  }
+
+  Widget buildBottomButtons(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                final walletState =
+                    Provider.of<WalletState>(context, listen: false);
+                _showReceiveDialog(context, walletState.address);
+              },
+              child: Text('Receive'),
+            ),
+          ),
+          SizedBox(width: 10), // Spacing between the buttons
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () async {
+                // Logic for send button
+                final walletState =
+                    Provider.of<WalletState>(context, listen: false);
+                await _updateOwnedOutputs(walletState, (Exception? e) async {
+                  if (e != null) {
+                    throw e;
+                  } else {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SpendScreen()));
+                  }
+                });
+              },
+              child: Text('Send'),
+            ),
           ),
         ],
       ),
