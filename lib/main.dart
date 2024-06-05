@@ -47,7 +47,7 @@ class WalletState extends ChangeNotifier {
   int tip = 0;
   double progress = 0.0;
   bool scanning = false;
-  String network = 'signet';
+  String network = 'main';
   bool walletLoaded = false;
   String address = "";
   Map<String, OwnedOutput> ownedOutputs = {};

@@ -359,7 +359,7 @@ pub fn broadcast_tx(tx: String) -> Result<String> {
     let txid = tx.txid();
 
     let opts = pushtx::Opts {
-        network: pushtx::Network::Signet,
+        network: pushtx::Network::Mainnet,
         ..Default::default()
     };
 
