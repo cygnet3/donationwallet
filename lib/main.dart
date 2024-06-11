@@ -50,7 +50,7 @@ class WalletState extends ChangeNotifier {
   int tip = 0;
   double progress = 0.0;
   bool scanning = false;
-  String network = 'signet';
+  String _network = 'signet';
   bool walletLoaded = false;
   String address = "";
   List<OwnedOutput> ownedOutputs = List.empty();
@@ -63,6 +63,12 @@ class WalletState extends ChangeNotifier {
   late StreamSubscription syncStreamSubscription;
 
   final _synchronizationService = SynchronizationService();
+
+  String get network => _network;
+  set network(String value) {
+    _network = value;
+    notifyListeners();
+  }
 
   WalletState();
 
