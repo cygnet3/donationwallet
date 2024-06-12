@@ -235,6 +235,25 @@ class LoadWalletScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
+            Consumer<WalletState>(
+              builder: (context, walletState, child) {
+                return DropdownButton<String>(
+                  hint: const Text('Select a network'),
+                  value: walletState.network,
+                  onChanged: (String? newValue) {
+                    walletState.network = newValue!;
+                  },
+                  items: <String>['main', 'signet', 'testnet', 'regtest']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+            const Spacer(),
             Expanded(
               child: _buildButton(
                 context,
