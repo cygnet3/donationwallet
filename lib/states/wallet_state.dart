@@ -24,6 +24,7 @@ class WalletState extends ChangeNotifier {
 
   late StreamSubscription logStreamSubscription;
   late StreamSubscription scanProgressSubscription;
+  late StreamSubscription scanResultSubscription;
   late StreamSubscription amountStreamSubscription;
   late StreamSubscription syncStreamSubscription;
 
@@ -68,6 +69,13 @@ class WalletState extends ChangeNotifier {
       notifyListeners();
     }));
 
+    scanResultSubscription = createScanResultStream().listen(((event) async {
+      String updatedWallet = event.updatedWallet;
+      print(updatedWallet);
+      await saveWalletToSecureStorage(updatedWallet);
+      await updateWalletStatus();
+    }));
+
     amountStreamSubscription = createAmountStream().listen((event) {
       amount = event;
       notifyListeners();
@@ -78,6 +86,7 @@ class WalletState extends ChangeNotifier {
   void dispose() {
     logStreamSubscription.cancel();
     scanProgressSubscription.cancel();
+    scanResultSubscription.cancel();
     amountStreamSubscription.cancel();
     syncStreamSubscription.cancel();
     super.dispose();
@@ -198,10 +207,7 @@ class WalletState extends ChangeNotifier {
     try {
       scanning = true;
       final wallet = await getWalletFromSecureStorage();
-      final updatedWallet = await scanToTip(encodedWallet: wallet);
-      print(updatedWallet);
-      await saveWalletToSecureStorage(updatedWallet);
-      await updateWalletStatus();
+      await scanToTip(encodedWallet: wallet);
     } catch (e) {
       scanning = false;
       notifyListeners();
