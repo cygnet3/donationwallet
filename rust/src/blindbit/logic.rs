@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::Instant};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use anyhow::{Error, Result};
 use bitcoin::{
@@ -16,10 +19,10 @@ use sp_client::{
     spclient::{OutputList, SpWallet},
 };
 
-use crate::stream::{send_amount_update, send_scan_progress, ScanProgress};
+use crate::stream::{send_amount_update, send_scan_progress, send_scan_result, ScanProgress};
 use crate::{
     blindbit::client::{BlindbitClient, UtxoResponse},
-    stream::{send_sync_progress, SyncStatus},
+    stream::ScanResult,
 };
 
 use super::client::FilterResponse;
@@ -39,23 +42,15 @@ fn get_blindbit_client(network: Network) -> Result<BlindbitClient> {
     }
 }
 
-pub async fn sync_blockchain(network: Network) -> Result<()> {
+pub async fn get_chain_height(network: Network) -> Result<u32> {
     let blindbit_client = get_blindbit_client(network)?;
 
-    let height = blindbit_client.block_height().await?;
-
-    send_sync_progress(SyncStatus {
-        blockheight: height,
-    });
-
-    Ok(())
+    blindbit_client.block_height().await
 }
 
-pub async fn scan_blocks(
-    mut n_blocks_to_scan: u32,
-    sp_wallet: &mut SpWallet,
-    network: Network,
-) -> Result<()> {
+pub async fn scan_blocks(mut n_blocks_to_scan: u32, sp_wallet: &mut SpWallet) -> Result<()> {
+    let network = sp_wallet.get_client().get_network();
+
     let blindbit_client = get_blindbit_client(network)?;
 
     let last_scan = sp_wallet.get_outputs().get_last_scan();
@@ -80,6 +75,7 @@ pub async fn scan_blocks(
 
     info!("start: {} end: {}", start, end);
     let start_time: Instant = Instant::now();
+    let mut update_time: Instant = start_time;
 
     let range = start..=end;
 
@@ -98,6 +94,25 @@ pub async fn scan_blocks(
 
     while let Some((blkheight, blkhash, tweaks, new_utxo_filter, spent_filter)) = data.next().await
     {
+        let mut send_update = false;
+
+        // send update if we are currently at the final block
+        if blkheight == end {
+            send_update = true;
+        }
+
+        // send update after 30 seconds since last update
+        if update_time.elapsed() > Duration::from_secs(30) {
+            send_update = true;
+            update_time = Instant::now();
+        }
+
+        send_scan_progress(ScanProgress {
+            start,
+            current: blkheight,
+            end,
+        });
+
         let (found_outputs, found_inputs) = process_block(
             blkheight,
             tweaks,
@@ -108,21 +123,27 @@ pub async fn scan_blocks(
         )
         .await?;
 
-        send_scan_progress(ScanProgress {
-            start,
-            current: blkheight,
-            end,
-        });
-
         if !found_outputs.is_empty() {
+            send_update = true;
             let height = Height::from_consensus(blkheight)?;
             sp_wallet.record_block_outputs(height, found_outputs);
             send_amount_update(sp_wallet.get_outputs().get_balance().to_sat());
         }
 
         if !found_inputs.is_empty() {
+            send_update = true;
             let height = Height::from_consensus(blkheight)?;
             sp_wallet.record_block_inputs(height, blkhash, found_inputs)?;
+        }
+
+        if send_update {
+            sp_wallet.get_mut_outputs().update_last_scan(blkheight);
+
+            let wallet_str = serde_json::to_string(&sp_wallet)?;
+
+            send_scan_result(ScanResult {
+                updated_wallet: wallet_str,
+            });
         }
     }
 
@@ -132,8 +153,6 @@ pub async fn scan_blocks(
         start_time.elapsed().as_secs()
     );
 
-    // update last_scan height
-    sp_wallet.get_mut_outputs().update_last_scan(tip_height);
     Ok(())
 }
 

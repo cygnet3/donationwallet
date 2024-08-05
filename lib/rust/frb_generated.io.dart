@@ -3,6 +3,7 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'api/chain.dart';
 import 'api/psbt.dart';
 import 'api/simple.dart';
 import 'api/stream.dart';
@@ -38,7 +39,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       dynamic raw);
 
   @protected
-  RustStreamSink<SyncStatus> dco_decode_StreamSink_sync_status_Sse(dynamic raw);
+  RustStreamSink<ScanResult> dco_decode_StreamSink_scan_result_Sse(dynamic raw);
 
   @protected
   RustStreamSink<BigInt> dco_decode_StreamSink_u_64_Sse(dynamic raw);
@@ -127,7 +128,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ScanProgress dco_decode_scan_progress(dynamic raw);
 
   @protected
-  SyncStatus dco_decode_sync_status(dynamic raw);
+  ScanResult dco_decode_scan_result(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -160,7 +161,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
-  RustStreamSink<SyncStatus> sse_decode_StreamSink_sync_status_Sse(
+  RustStreamSink<ScanResult> sse_decode_StreamSink_scan_result_Sse(
       SseDeserializer deserializer);
 
   @protected
@@ -257,7 +258,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ScanProgress sse_decode_scan_progress(SseDeserializer deserializer);
 
   @protected
-  SyncStatus sse_decode_sync_status(SseDeserializer deserializer);
+  ScanResult sse_decode_scan_result(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -291,8 +292,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       RustStreamSink<ScanProgress> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_StreamSink_sync_status_Sse(
-      RustStreamSink<SyncStatus> self, SseSerializer serializer);
+  void sse_encode_StreamSink_scan_result_Sse(
+      RustStreamSink<ScanResult> self, SseSerializer serializer);
 
   @protected
   void sse_encode_StreamSink_u_64_Sse(
@@ -388,7 +389,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_scan_progress(ScanProgress self, SseSerializer serializer);
 
   @protected
-  void sse_encode_sync_status(SyncStatus self, SseSerializer serializer);
+  void sse_encode_scan_result(ScanResult self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);

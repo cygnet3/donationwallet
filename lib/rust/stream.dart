@@ -30,20 +30,20 @@ class ScanProgress {
           end == other.end;
 }
 
-class SyncStatus {
-  final int blockheight;
+class ScanResult {
+  final String updatedWallet;
 
-  const SyncStatus({
-    required this.blockheight,
+  const ScanResult({
+    required this.updatedWallet,
   });
 
   @override
-  int get hashCode => blockheight.hashCode;
+  int get hashCode => updatedWallet.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SyncStatus &&
+      other is ScanResult &&
           runtimeType == other.runtimeType &&
-          blockheight == other.blockheight;
+          updatedWallet == other.updatedWallet;
 }
